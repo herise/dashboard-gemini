@@ -1,0 +1,53 @@
+const chatForm = document.getElementById('chat-form');
+const userInput = document.getElementById('user-input');
+const chatBox = document.getElementById('chat-box');
+const sendBtn = document.getElementById('send-btn');
+
+function addMessage(text, isUser = false) {
+    const wrapper = document.createElement('div');
+    wrapper.className = isUser ? 'flex justify-end' : 'flex justify-start';
+
+    const msgBubble = document.createElement('div');
+    msgBubble.className = isUser 
+        ? 'bg-teal-600 text-white p-3 rounded-lg max-w-[80%] shadow-md' 
+        : 'bg-slate-800 text-slate-100 p-3 rounded-lg max-w-[80%] border border-slate-700 shadow-md';
+    
+    msgBubble.innerText = text;
+    wrapper.appendChild(msgBubble);
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    addMessage(message, true);
+    userInput.value = '';
+    
+    sendBtn.disabled = true;
+    sendBtn.innerText = 'Mikir...';
+
+    try {
+        // Menembak ke jembatan rahasia Vercel Anda sendiri
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: message })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            addMessage(data.reply, false);
+        } else {
+            addMessage(`Error: ${data.error || 'Gagal merespon'}`, false);
+        }
+    } catch (err) {
+        addMessage('Terjadi kesalahan jaringan.', false);
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerText = 'Kirim';
+    }
+});
